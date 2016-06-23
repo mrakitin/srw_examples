@@ -12,52 +12,10 @@ import sys
 import copy
 
 
-# **********************Auxiliary functions
-
-def AuxSaveTrajData(traj, filePath):
-    f = open(filePath, 'w')
-    resStr = '#ct [m], X [m], BetaX [rad], Y [m], BetaY [rad], Z [m], BetaZ [rad]'
-    if (hasattr(traj, 'arBx')):
-        resStr += ', Bx [T]'
-    if (hasattr(traj, 'arBy')):
-        resStr += ', By [T]'
-    if (hasattr(traj, 'arBz')):
-        resStr += ', Bz [T]'
-    f.write(resStr + '\n')
-    ctStep = 0
-    if traj.np > 0:
-        ctStep = (traj.ctEnd - traj.ctStart) / (traj.np - 1)
-    ct = traj.ctStart
-    for i in range(traj.np):
-        resStr = str(ct) + '\t' + repr(traj.arX[i]) + '\t' + repr(traj.arXp[i]) + '\t' + repr(
-            traj.arY[i]) + '\t' + repr(traj.arYp[i]) + '\t' + repr(traj.arZ[i]) + '\t' + repr(traj.arZp[i])
-        if (hasattr(traj, 'arBx')):
-            resStr += '\t' + repr(traj.arBx[i])
-        if (hasattr(traj, 'arBy')):
-            resStr += '\t' + repr(traj.arBy[i])
-        if (hasattr(traj, 'arBz')):
-            resStr += '\t' + repr(traj.arBz[i])
-        f.write(resStr + '\n')
-        ct += ctStep
-    f.close()
-
 
 # Read data comumns from ASCII file:
 def AuxReadInDataColumns(filePath, nCol, strSep):
-    f = open(filePath, 'r')
-    resCols = []
-    for iCol in range(nCol):
-        resCols.append([])
-
-    curLine = f.readline()
-    while len(curLine) > 0:
-        curLineParts = curLine.split(strSep)
-        for iCol in range(nCol):
-            if (iCol < len(curLineParts)):
-                resCols[iCol].append(float(curLineParts[iCol]))
-            curLine = f.readline()
-    f.close()
-    return resCols  # attn: returns lists, not arrays!
+    return srwl_uti_read_data_cols(filePath, strSep)
 
 
 def AuxTransmAddSurfHeightProfile(optSlopeErr, heightProfData, dim, ang):
@@ -139,8 +97,7 @@ strBump = '_bump' if bump else ''
 
 print('modeling SMI beamline ' + beamline + ' with bump = ' + repr(bump) + ' BMmode = ' + BMmode)
 
-print(
-    'Calculating spectral flux of undulator radiation by finite-emittance electron beam collected through a finite aperture')
+print('Calculating spectral flux of undulator radiation by finite-emittance electron beam collected through a finite aperture')
 
 # **********************Input Parameters:
 strExDataFolderName = 'smi204crlb'  # example data sub-folder name
@@ -172,15 +129,14 @@ xcID = 0  # Transverse Coordinates of Undulator Center [m]
 ycID = 0
 zcID = 0.6  # 0 #Longitudinal Coordinate of Undulator Center [m]
 
-sys.stdout.write('   Setup Magnetic Field for Undulator ... ');
+sys.stdout.write('   Setup Magnetic Field for Undulator ... ')
 sys.stdout.flush()
 und = SRWLMagFldU([SRWLMagFldH(1, 'v', By, phBy, sBy, 1)], undPer, numPer)  # Planar Undulator
-magFldCnt = SRWLMagFldC([und], array('d', [xcID]), array('d', [ycID]),
-                        array('d', [zcID]))  # Container of all Field Elements
+magFldCnt = SRWLMagFldC([und], array('d', [xcID]), array('d', [ycID]), array('d', [zcID]))  # Container of all Field Elements
 sys.stdout.write('done\n')
 
 # ***********Electron Beam
-sys.stdout.write('   Setup Electron Beam for Undulator ... ');
+sys.stdout.write('   Setup Electron Beam for Undulator ... ')
 sys.stdout.flush()
 elecBeam = SRWLPartBeam()
 elecBeam.Iavg = 0.5  # Average Current [A]
@@ -267,6 +223,7 @@ D_APE_MOA = SRWLOptD(2.44)
 heightProf = AuxReadInDataColumns(strProfileData, 2, '\t')
 # MOAT        = SRWLOptT(100, 2001, 2.0e-02, 3.0e-02*sin(1.223866));
 MOAT = SRWLOptT(100, 500, 2.0e-02, 16e-3 * sin(0.09727))
+opMOAT = srwl_opt_setup_surf_height_2d(heightProf, 'y', _ang=0.09727, _nx=100, _ny=500, _size_x=2.0e-02, _size_y=16e-3 * sin(0.09727))
 AuxTransmAddSurfHeightProfile(MOAT, heightProf, 'y', 0.09727)  # incident angle is 70.122373 deg => 1.223866 rad
 opPathDifMOAT = MOAT.get_data(3, 3)
 srwl_uti_save_intens_ascii(opPathDifMOAT, MOAT.mesh, os.path.join(os.getcwd(), strExDataFolderName, 'res_er_mono.dat'),
@@ -279,8 +236,7 @@ D_APE_HFM = SRWLOptD(2.44 + 2.94244)  # used for "no bump" option
 if BMmode == 'Norm':
     HFML = SRWLOptL(_Fx=1. / (1. / (29.5 + 2.44 + 2.94244) + 1. / (3.42 + 8.7 + 3.9)))  # to focus at ES1
 if BMmode == 'LowDiv':
-    HFML = SRWLOptL(_Fx=1. / (
-        1. / (29.5 + 2.44 + 2.94244) + 1. / (3.42 + 8.7 + 3.9 + 8.1 - 0.3)))  # to focus at ES2 with a low divergence
+    HFML = SRWLOptL(_Fx=1. / (1. / (29.5 + 2.44 + 2.94244) + 1. / (3.42 + 8.7 + 3.9 + 8.1 - 0.3)))  # to focus at ES2 with a low divergence
 
 # ================introducing HFM slope error==============
 heightProfHFM = AuxReadInDataColumns(strProfileDataHFM, 2, '\t')
@@ -295,11 +251,9 @@ srwl_uti_save_intens_ascii(opPathDifHFMT, HFMT.mesh, os.path.join(os.getcwd(), s
 # HFMT = SRWLOptT()
 D_HFM_VFM = SRWLOptD(3.42)
 if BMmode == 'Norm':
-    VFML = SRWLOptL(_Fy=1. / (1. / (29.5 + 2.44 + 2.94244 + 3.42 - 0.6) + 1. / (
-        8.7 + 3.9 + 0.3)))  # focus at ES1; if using Bump, VFM must be 3.9+0.3 m (to compensate bump which moves focus 0.2 m upstream)
+    VFML = SRWLOptL(_Fy=1. / (1. / (29.5 + 2.44 + 2.94244 + 3.42 - 0.6) + 1. / (8.7 + 3.9 + 0.3)))  # focus at ES1; if using Bump, VFM must be 3.9+0.3 m (to compensate bump which moves focus 0.2 m upstream)
 if BMmode == 'LowDiv':
-    VFML = SRWLOptL(_Fy=1. / (
-        1. / (29.5 + 2.44 + 2.94244 + 3.42 - 0.6) + 1. / (8.7 + 3.9 - 5.7 + 8.1)))  # focus at ES2 with a low divergence
+    VFML = SRWLOptL(_Fy=1. / (1. / (29.5 + 2.44 + 2.94244 + 3.42 - 0.6) + 1. / (8.7 + 3.9 - 5.7 + 8.1)))  # focus at ES2 with a low divergence
 
 # ================introducing VFM slope error==============
 heightProfVFM = AuxReadInDataColumns(strProfileDataVFM, 2, '\t')
@@ -479,21 +433,6 @@ if beamline == 'ES2' and bump and BMmode == 'Norm':
 # CALCULATION
 
 # **********************Calculation (SRWLIB function calls)
-
-# ***Electron Trajectory
-partTraj = SRWLPrtTrj()
-partTraj.partInitCond = elecBeam.partStatMom1
-partTraj.allocate(npTraj)
-partTraj.ctStart = elecBeam.partStatMom1.z  # Start Time for the calculation
-# partTraj.ctEnd = (numPer + 2)*per + magFldCnt.arMagFld[0].rz + magFldCnt.arMagFld[2].rz #End Time
-partTraj.ctEnd = 4
-
-# print('   Performing trajectory calculation ... ', end='')
-# partTraj = srwl.CalcPartTraj(partTraj, magFldCnt, [1])
-# AuxSaveTrajData(partTraj, os.path.join(os.getcwd(), strExDataFolderName, strTrajOutFileName))
-# print('done')
-
-# sys.exit(0)
 
 sys.stdout.write('   Performing Single Electron calculation ... ');
 sys.stdout.flush()

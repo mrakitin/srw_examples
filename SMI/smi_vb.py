@@ -40,233 +40,175 @@ def set_optics(_v):
     :return SRWLOptC(): container object.
     """
 
-    #---Nominal Positions of Optical Elements [m] (with respect to straight section center)
-    zS0 = 33.1798 #White Beam Slits (S0)
-    zHFM = 34.2608 #Horizontally-Focusing Mirror M1 (HFM)
-    zS1 = 35.6678 #Pink Beam Slits (S1)
-    zDCM = 36.4488 #Horizontall-Deflecting Double-Crystal Monochromator (DCM)
-    zBPM1 = 38.6904 #BPM-1
-    zBPM2 = 50.3872 #BPM-2
-    zSSA = 50.6572 #Secondary Source Aperture (SSA)
-    zEA = 61.9611 #Energy Absorber (EA)
-    zDBPM1 = 62.272 #Diamond BPM-1
-    zKBFV = 62.663 #High-Flux Vertically-Focusing KB Mirror M2
-    zKBFH = 63.0 #High-Flux Horizontally-Focusing KB Mirror M3
-    zSF = 63.3 #High-Flux Sample position (focus of KBF)
-    zDBPM2 = 65.9178 #Diamond BPM-2
-    zKBRV = 66.113 #High-Resolution Vertically-Focusing KB Mirror M4
-    zKBRH = 66.220 #High-Resolution Horizontally-Focusing KB Mirror M5
-    zSR = 63.3 #High-Resolution Sample position (focus of KBR)
-    #zD = 65 #Detector position (?)
+    # Nominal Positions of Optical Elements [m] (with respect to straight section center)
+    zStart = _v.op_r
+    zAPE = zStart
+    zMOAT = zStart + 2.44
+    zHFM = zStart + 2.44 + 2.94244
+    zVFM = zStart + 2.44 + 2.94244 + 3.42
+    zVM  = zStart + 2.44 + 2.94244 + 3.42 + 0.7
+    zSSA = zStart + 2.44 + 2.94244 + 3.42 + 0.7 + 8.0
+    zES1 = zStart + 2.44 + 2.94244 + 3.42 + 0.7 + 8.0 + 3.9
+    zCRL = zStart + 2.44 + 2.94244 + 3.42 + 0.7 + 8.0 + 10.33492
+    zES2 = zStart + 2.44 + 2.94244 + 3.42 + 0.7 + 8.0 + 10.33492 + 1.66508
 
-    #---Instantiation of the Optical Elements
-    arElNamesAll_01 = ['S0', 'S1', 'S1_DCM', 'DCM', 'DCM_SSA', 'SSA', 'SSA_KBFV', 'KBFV', 'KBFV_KBFH', 'KBFH', 'KBFH_zSF']
-    arElNamesAll_02 = ['S0', 'S0_HFM', 'HFM', 'HFM_S1', 'S1', 'S1_DCM', 'DCM', 'DCM_SSA', 'SSA', 'SSA_KBRV', 'KBRV', 'KBRV_KBRH', 'KBRH', 'KBRH_zSR']
-    arElNamesAll_03 = ['S0', 'S0_HFM', 'HFM', 'HFM_S1', 'S1', 'S1_DCM', 'DCM', 'DCM_SSA', 'SSA', 'SSA_DBPM2', 'DBPM2_KBRV', 'KBRV', 'KBRV_KBRH', 'KBRH', 'KBRH_zSR']
-    arElNamesAll_04 = ['S0', 'S0_HFM', 'HFM', 'HFM_S1', 'S1', 'S1_SSA', 'SSA', 'SSA_DBPM2', 'DBPM2_KBRV', 'KBRV', 'KBRV_KBRH', 'KBRH', 'KBRH_zSR']
+    # Instantiation of the Optical Elements:
+    arElNamesAll_01 = ['D_APE_MOA', 'MOAT', 'D_MOA_HFM', 'HFML', 'HFMT', 'D_HFM_VFM', 'VFML', 'VFMT',
+                       'D_VFM_VM', 'VMT', 'D_VM_SSA', 'SSA', 'D_SSA_CRL', 'ApCRL', 'CRL', 'D_CRL_ES2']
+    arElNamesAll_02 = []
+    arElNamesAll_03 = []
+    arElNamesAll_04 = []
 
     arElNamesAll = arElNamesAll_01
-    if(_v.op_BL == 2): arElNamesAll = arElNamesAll_02
-    elif(_v.op_BL == 3): arElNamesAll = arElNamesAll_03
-    elif(_v.op_BL == 4): arElNamesAll = arElNamesAll_04
+    if _v.op_BL == 2:
+        arElNamesAll = arElNamesAll_02
+    elif _v.op_BL == 3:
+        arElNamesAll = arElNamesAll_03
+    elif _v.op_BL == 4:
+        arElNamesAll = arElNamesAll_04
 
-    '''
-    #Treat beamline sub-cases / alternative configurations
-    if(len(_v.op_fin) > 0):
-        if(_v.op_fin not in arElNamesAll): raise Exception('Optical element with the name specified in the "op_fin" option is not present in this beamline')
-        #Could be made more general
-    '''
+    # Treat beamline sub-cases / alternative configurations
+    if len(_v.op_fin) > 0:
+        if _v.op_fin not in arElNamesAll:
+            raise Exception('Optical element with the name specified in the "op_fin" option is not present in this beamline')
 
     arElNames = []
     for i in range(len(arElNamesAll)):
         arElNames.append(arElNamesAll[i])
-        if(len(_v.op_fin) > 0):
-            if(arElNamesAll[i] == _v.op_fin): break
+        if len(_v.op_fin) > 0:
+            if arElNamesAll[i] == _v.op_fin:
+                break
 
-    el = []; pp = [] #lists of SRW optical element objects and their corresponding propagation parameters
+    # Lists of SRW optical element objects and their corresponding propagation parameters
+    el = []
+    pp = []
 
-    #S0 (primary slit)
-    if('S0' in arElNames):
-        el.append(SRWLOptA('r', 'a', _v.op_S0_dx, _v.op_S0_dy)); pp.append(_v.op_S0_pp)
+    for i in range(len(arElNames)):
+        # Process all drifts here:
+        if arElNames[i] == 'D_APE_MOA':
+            el.append(SRWLOptD(zMOAT - zAPE))
+            pp.append(_v.op_APE_MOA_pp)
+        elif arElNames[i] == 'D_MOA_HFM':
+            el.append(SRWLOptD(zHFM - zMOAT))
+            pp.append(_v.op_MOA_HFM_pp)
+        elif arElNames[i] == 'D_HFM_VFM':
+            el.append(SRWLOptD(zVFM - zHFM))
+            pp.append(_v.op_HFM_VFM_pp)
+        elif arElNames[i] == 'D_VFM_VM':
+            el.append(SRWLOptD(zVM - zVFM))
+            pp.append(_v.op_VFM_VM_pp)
 
-    #Drift S0 -> HFM
-    if('S0_HFM' in arElNames):
-        el.append(SRWLOptD(zHFM - zS0)); pp.append(_v.op_S0_HFM_pp)
 
-    #HDM (Height Profile Error)
-    if('HFM' in arElNames):
-        lenHFM = 0.95 #Length [m]
-        horApHFM = lenHFM*_v.op_HFM_ang #Projected dimensions
-        verApHFM = 5.e-03 #?
+        elif arElNames[i] == 'MOAT':
+            ifnMOAT = os.path.join(_v.fdir, _v.op_MOAT_ifn) if len(_v.op_MOAT_ifn) > 0 else ''
+            if len(ifnMOAT) > 0 and os.path.isfile(ifnMOAT):
+                hProfDataMOAT = srwl_uti_read_data_cols(ifnMOAT, '\t')
+                opMOAT = srwl_opt_setup_surf_height_2d(hProfDataMOAT, 'y', _ang=0.09727, _nx=100, _ny=500, _size_x=2.0e-02,
+                                                       _size_y=16e-3 * sin(0.09727))
+                ofnMOAT = os.path.join(_v.fdir, _v.op_MOAT_ofn) if len(_v.op_MOAT_ofn) > 0 else ''
+                if len(ofnMOAT) > 0:
+                    pathDifMOAT = opMOAT.get_data(3, 3)
+                    srwl_uti_save_intens_ascii(pathDifMOAT, opMOAT.mesh, ofnMOAT, 0,
+                                               ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'],
+                                               _arUnits=['', 'm', 'm', 'm'])
+                el.append(opMOAT)
+                pp.append(_v.op_MOAT_pp)
 
-        el.append(SRWLOptA('r', 'a', horApHFM, verApHFM)); pp.append(_v.op_HFMA_pp)
+        elif arElNames[i] == 'HFML':
+            el.append(SRWLOptL(_Fx=1. / (1. / zHFM + 1. / ((zVFM - zHFM) + (zSSA - zVFM) + (zES1 - zSSA)))))  # to focus at ES1
+            pp.append(_v.op_HFML_pp)
 
-        if(_v.op_HFM_f != 0.):
-            el.append(SRWLOptL(_Fx=_v.op_HFM_f)); pp.append(_v.op_HFML_pp)
-            #To treat Reflectivity (maybe by Planar Mirror?)
-            #elif(_v.op_HFM_r != 0.):
-            #Setup Cylindrical Mirror, take into account Reflectivity
+        elif arElNames[i] == 'HFMT':
+            ifnHFM = os.path.join(_v.fdir, _v.op_HFM_ifn) if len(_v.op_HFM_ifn) > 0 else ''
+            if len(ifnHFM) > 0:
+                hProfDataHFM = srwl_uti_read_data_cols(ifnHFM, '\t')
+                opHFM = srwl_opt_setup_surf_height_2d(hProfDataHFM, 'x', _ang=_v.op_HFM_ang, _amp_coef=_v.op_HFM_amp,
+                                                      _nx=803, _ny=200, _size_x=0.5 * sin(3.1415927e-03), _size_y=6.0e-03)
+                ofnHFM = os.path.join(_v.fdir, _v.op_HFM_ofn) if len(_v.op_HFM_ofn) > 0 else ''
+                if len(ofnHFM) > 0:
+                    pathDifHFM = opHFM.get_data(3, 3)
+                    srwl_uti_save_intens_ascii(pathDifHFM, opHFM.mesh, ofnHFM, 0,
+                                               ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'],
+                                               _arUnits=['', 'm', 'm', 'm'])
+                el.append(opHFM)
+                pp.append(_v.op_HFMT_pp)
 
-        #Height Profile Error
-        ifnHFM = os.path.join(_v.fdir, _v.op_HFM_ifn) if len(_v.op_HFM_ifn) > 0 else ''
-        if(len(ifnHFM) > 0):
-            #hProfDataHFM = srwl_uti_read_data_cols(ifnHFM, '\t', 0, 1)
-            hProfDataHFM = srwl_uti_read_data_cols(ifnHFM, '\t')
-            opHFM = srwl_opt_setup_surf_height_2d(hProfDataHFM, 'x', _ang=_v.op_HFM_ang, _amp_coef=_v.op_HFM_amp, _nx=1500, _ny=200)
-            ofnHFM = os.path.join(_v.fdir, _v.op_HFM_ofn) if len(_v.op_HFM_ofn) > 0 else ''
-            if(len(ofnHFM) > 0):
-                pathDifHFM = opHFM.get_data(3, 3)
-                srwl_uti_save_intens_ascii(pathDifHFM, opHFM.mesh, ofnHFM, 0, ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'], _arUnits=['', 'm', 'm', 'm'])
-            el.append(opHFM); pp.append(_v.op_HFMT_pp)
+        elif arElNames[i] == 'VFML':
+            # focus at ES1; if using Bump, VFM must be 3.9+0.3 m (to compensate bump which moves focus 0.2 m upstream)
+            el.append(SRWLOptL(_Fy=1. / (1. / (zVFM - 0.6) + 1. / ((zSSA - zVFM) + 3.9 + 0.3))))  # Norm
+            pp.append(_v.op_VFML_pp)
 
-    #Drift HFM -> S1
-    if('HFM_S1' in arElNames):
-        el.append(SRWLOptD(zS1 - zHFM + _v.op_S1_dz)); pp.append(_v.op_HFM_S1_pp)
+        elif arElNames[i] == 'VFMT':
+            ifnVFM = os.path.join(_v.fdir, _v.op_VFM_ifn) if len(_v.op_VFM_ifn) > 0 else ''
+            if len(ifnVFM) > 0:
+                hProfDataVFM = srwl_uti_read_data_cols(ifnVFM, '\t')
+                opVFM = srwl_opt_setup_surf_height_2d(hProfDataVFM, 'y', _ang=3.1415927e-03, _nx=200, _ny=288,
+                                                       _size_x=6.0e-03, _size_y=0.4 * sin(3.1415927e-03))
+                ofnVFM = os.path.join(_v.fdir, _v.op_VFM_ofn) if len(_v.op_VFM_ofn) > 0 else ''
+                if len(ofnVFM) > 0:
+                    pathDifVFM = opVFM.get_data(3, 3)
+                    srwl_uti_save_intens_ascii(pathDifVFM, opVFM.mesh, ofnVFM, 0,
+                                               ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'],
+                                               _arUnits=['', 'm', 'm', 'm'])
+                el.append(opVFM)
+                pp.append(_v.op_VFMT_pp)
 
-    #S1 slit
-    if('S1' in arElNames):
-        el.append(SRWLOptA('r', 'a', _v.op_S1_dx, _v.op_S1_dy)); pp.append(_v.op_S1_pp)
+        elif arElNames[i] == 'VMT':
+            ifnVM = os.path.join(_v.fdir, _v.op_VM_ifn) if len(_v.op_VM_ifn) > 0 else ''
+            if len(ifnVM) > 0:
+                hProfDataVM = srwl_uti_read_data_cols(ifnVM, '\t')
+                # sinusoidal equal to HFM. the original spec is 0.1, 6.75e-09 both 'h' 'v', angle 6.1086524e-03 rad to correct for vertical.
+                opVM = srwl_opt_setup_surf_height_2d(hProfDataVM, 'y', _ang=3.1415927e-03, _nx=200, _ny=500,
+                                                       _size_x=6.0e-03, _size_y=0.5 * sin(3.1415927e-03))
+                ofnVM = os.path.join(_v.fdir, _v.op_VM_ofn) if len(_v.op_VM_ofn) > 0 else ''
+                if len(ofnVM) > 0:
+                    pathDifVM = opVM.get_data(3, 3)
+                    srwl_uti_save_intens_ascii(pathDifVM, opVM.mesh, ofnVM, 0,
+                                               ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'],
+                                               _arUnits=['', 'm', 'm', 'm'])
+                el.append(opVM)
+                pp.append(_v.op_VMT_pp)
 
-    #Drift S1 -> DCM
-    if('S1_DCM' in arElNames):
-        el.append(SRWLOptD(zDCM - zS1 - _v.op_S1_dz)); pp.append(_v.op_S1_DCM_pp)
+        elif arElNames[i] == 'SSA':
+            # SSA = SRWLOptA('r', 'a', 0.4e-03, 0.4e-03)  # 0.4, 0.4 for NOT low divergence mode;
+            el.append(SRWLOptA('r', 'a', _v.op_SSA_dx, _v.op_SSA_dy))
+            pp.append(_v.op_SSA_pp)
 
-    #Drift S1 -> SSA
-    if('S1_SSA' in arElNames):
-        el.append(SRWLOptD(zSSA - zS1 - _v.op_S1_dz + _v.op_SSA_dz)); pp.append(_v.op_S1_SSA_pp)
+        elif arElNames[i] == 'ApCRL':
+            # ApCRL = SRWLOptA('c', 'a', 1.0e-3)
+            el.append(SRWLOptA('c', 'a', _v.op_ApCRL_r))
+            pp.append(_v.op_ApCRL_pp)
 
-    #Double-Crystal Monochromator
-    if('DCM' in arElNames):
-        tc = 1e-02 # [m] crystal thickness
-        angAs = 0.*pi/180. # [rad] asymmetry angle
-        hc = [1,1,1]
-        if(_v.op_DCM_r == '311'): hc = [3,1,1]
+        elif arElNames[i] == 'CRL':
+            from Delta import Delta, DEFAULTS_FILE
+            delta_obj = Delta(
+                energy=_v.w_e,
+                precise=True,
+                data_file=os.path.join(os.path.dirname(os.path.dirname(DEFAULTS_FILE)), 'dat/Be_delta.dat'),
+                quiet=True
+            )
+            delta = delta_obj.delta  # 8.21692879E-07  # Be @ 20.4KeV
+            attenLen = 28544.7e-06  # [m] #20.4KeV
+            diamCRL = 1.e-03  # CRL diameter
+            rMinCRL = 50e-06  # CRL radius at the tip of parabola [m]
+            nCRL = 23  # number of lenses
+            wallThickCRL = 32.4e-06  # CRL wall thickness [m]
 
-        dc = srwl_uti_cryst_pl_sp(hc, 'Si')
-        #print('DCM Interplannar dist.:', dc)
-        psi = srwl_uti_cryst_pol_f(_v.op_DCM_e0, hc, 'Si')  #MR15032016: replaced "op_DCM_e" by "op_DCM_e0" to test the import in Sirepo
-        #print('DCM Fourier Components:', psi)
-
-        #---------------------- DCM Crystal #1
-        opCr1 = SRWLOptCryst(_d_sp=dc, _psi0r=psi[0], _psi0i=psi[1], _psi_hr=psi[2], _psi_hi=psi[3], _psi_hbr=psi[2], _psi_hbi=psi[3], _tc=tc, _ang_as=angAs)
-
-        #Find appropriate orientation of the Crystal #1 and the Output Beam Frame (using a member-function in SRWLOptCryst):
-        orientDataCr1 = opCr1.find_orient(_en=_v.op_DCM_e0, _ang_dif_pl=1.5707963) # Horizontally-deflecting  #MR15032016: replaced "op_DCM_e" by "op_DCM_e0" to test the import in Sirepo
-        #Crystal #1 Orientation found:
-        orientCr1 = orientDataCr1[0]
-        tCr1 = orientCr1[0] #Tangential Vector to Crystal surface
-        sCr1 = orientCr1[1]
-        nCr1 = orientCr1[2] #Normal Vector to Crystal surface
-        # print('DCM Crystal #1 Orientation (original):')
-        # print('  t =', tCr1, 's =', orientCr1[1], 'n =', nCr1)
-
-        import uti_math
-        if(_v.op_DCM_ac1 != 0): #Small rotation of DCM Crystal #1:
-            rot = uti_math.trf_rotation([0,1,0], _v.op_DCM_ac1, [0,0,0])
-            tCr1 = uti_math.matr_prod(rot[0], tCr1)
-            sCr1 = uti_math.matr_prod(rot[0], sCr1)
-            nCr1 = uti_math.matr_prod(rot[0], nCr1)
-
-        #Set the Crystal #1 orientation:
-        opCr1.set_orient(nCr1[0], nCr1[1], nCr1[2], tCr1[0], tCr1[1])
-
-        #Orientation of the Outgoing Beam Frame being found:
-        orientCr1OutFr = orientDataCr1[1]
-        rxCr1 = orientCr1OutFr[0] #Horizontal Base Vector of the Output Beam Frame
-        ryCr1 = orientCr1OutFr[1] #Vertical Base Vector of the Output Beam Frame
-        rzCr1 = orientCr1OutFr[2] #Longitudinal Base Vector of the Output Beam Frame
-        # print('DCM Crystal #1 Outgoing Beam Frame:')
-        # print('  ex =', rxCr1, 'ey =', ryCr1, 'ez =', rzCr1)
-
-        #Incoming/Outgoing beam frame transformation matrix for the DCM Crystal #1
-        TCr1 = [rxCr1, ryCr1, rzCr1]
-        # print('Total transformation matrix after DCM Crystal #1:')
-        # uti_math.matr_print(TCr1)
-        #print(' ')
-
-        el.append(opCr1); pp.append(_v.op_DCMC1_pp)
-
-        #---------------------- DCM Crystal #2
-        opCr2 = SRWLOptCryst(_d_sp=dc, _psi0r=psi[0], _psi0i=psi[1], _psi_hr=psi[2], _psi_hi=psi[3], _psi_hbr=psi[2], _psi_hbi=psi[3], _tc=tc, _ang_as=angAs)
-
-        #Find appropriate orientation of the Crystal #2 and the Output Beam Frame
-        orientDataCr2 = opCr2.find_orient(_en=_v.op_DCM_e0, _ang_dif_pl=-1.5707963)  #MR15032016: replaced "op_DCM_e" by "op_DCM_e0" to test the import in Sirepo
-        #Crystal #2 Orientation found:
-        orientCr2 = orientDataCr2[0]
-        tCr2 = orientCr2[0] #Tangential Vector to Crystal surface
-        sCr2 = orientCr2[1]
-        nCr2 = orientCr2[2] #Normal Vector to Crystal surface
-        # print('Crystal #2 Orientation (original):')
-        # print('  t =', tCr2, 's =', sCr2, 'n =', nCr2)
-
-        if(_v.op_DCM_ac2 != 0): #Small rotation of DCM Crystal #2:
-            rot = uti_math.trf_rotation([0,1,0], _v.op_DCM_ac2, [0,0,0])
-            tCr2 = uti_math.matr_prod(rot[0], tCr2)
-            sCr2 = uti_math.matr_prod(rot[0], sCr2)
-            nCr2 = uti_math.matr_prod(rot[0], nCr2)
-
-        #Set the Crystal #2 orientation
-        opCr2.set_orient(nCr2[0], nCr2[1], nCr2[2], tCr2[0], tCr2[1])
-
-        #Orientation of the Outgoing Beam Frame being found:
-        orientCr2OutFr = orientDataCr2[1]
-        rxCr2 = orientCr2OutFr[0] #Horizontal Base Vector of the Output Beam Frame
-        ryCr2 = orientCr2OutFr[1] #Vertical Base Vector of the Output Beam Frame
-        rzCr2 = orientCr2OutFr[2] #Longitudinal Base Vector of the Output Beam Frame
-        # print('DCM Crystal #2 Outgoing Beam Frame:')
-        # print('  ex =', rxCr2, 'ey =', ryCr2, 'ez =',rzCr2)
-
-        #Incoming/Outgoing beam transformation matrix for the DCM Crystal #2
-        TCr2 = [rxCr2, ryCr2, rzCr2]
-        Ttot = uti_math.matr_prod(TCr2, TCr1)
-        # print('Total transformation matrix after DCM Crystal #2:')
-        # uti_math.matr_print(Ttot)
-        #print(' ')
-
-        el.append(opCr2); pp.append(_v.op_DCMC2_pp)
-
-    #Drift DCM -> SSA
-    if('DCM_SSA' in arElNames):
-        el.append(SRWLOptD(zSSA - zDCM + _v.op_SSA_dz)); pp.append(_v.op_DCM_SSA_pp)
-
-    #SSA slit
-    if('SSA' in arElNames):
-        el.append(SRWLOptA('r', 'a', _v.op_SSA_dx, _v.op_SSA_dy)); pp.append(_v.op_SSA_pp)
-
-    #Drift SSA -> DBPM2
-    if('SSA_DBPM2' in arElNames):
-        el.append(SRWLOptD(zDBPM2 - zSSA - _v.op_SSA_dz + _v.op_DBPM2_dz)); pp.append(_v.op_SSA_DBPM2_pp)
-
-        ###############To continue
-
-    ##    #Sample
-    ##    if('SMP' in arElNames):
-    ##        ifnSMP = os.path.join(v.fdir, v.op_SMP_ifn) if len(v.op_SMP_ifn) > 0 else ''
-    ##        if(len(ifnSMP) > 0):
-    ##            ifSMP = open(ifnSMP, 'rb')
-    ##            opSMP = pickle.load(ifSMP)
-    ##            ofnSMP = os.path.join(v.fdir, v.op_SMP_ofn) if len(v.op_SMP_ofn) > 0 else ''
-    ##            if(len(ofnSMP) > 0):
-    ##                pathDifSMP = opSMP.get_data(3, 3)
-    ##                srwl_uti_save_intens_ascii(pathDifSMP, opSMP.mesh, ofnSMP, 0, ['', 'Horizontal Position', 'Vertical Position', 'Opt. Path Dif.'], _arUnits=['', 'm', 'm', 'm'])
-    ##            el.append(opSMP); pp.append(v.op_SMP_pp)
-    ##            ifSMP.close()
-
-    ##    #Drift Sample -> Detector
-    ##    if('SMP_D' in arElNames):
-    ##        el.append(SRWLOptD(zD - zSample + v.op_D_dz)); pp.append(v.op_SMP_D_pp)
+            el.append(srwl_opt_setup_CRL(3, delta, attenLen, 1, diamCRL, diamCRL, rMinCRL, nCRL, wallThickCRL, 0, 0))
+            pp.append(_v.op_CRL_pp)
+        else:
+            raise Exception('Processing for element "{}" is not included yet.'.format(arElNames[i]))
 
     pp.append(_v.op_fin_pp)
-
     return SRWLOptC(el, pp)
 
-#*********************************List of Parameters allowed to be varied
-#---List of supported options / commands / parameters allowed to be varied for this Beamline (comment-out unnecessary):
+#********************************* List of Parameters allowed to be varied
+# List of supported options / commands / parameters allowed to be varied for this Beamline (comment-out unnecessary):
 varParam = [
-    #---Data Folder
-    ['fdir', 's', os.path.join(os.getcwd(), 'data_SRX'), 'folder (directory) name for reading-in input and saving output data files'],
+    # Data Folder
+    ['fdir', 's', os.path.join(os.getcwd(), 'smi204crlb'), 'folder (directory) name for reading-in input and saving output data files'],
 
-    #---Electron Beam
+    # Electron Beam
     ['ebm_nm', 's', 'NSLS-II Low Beta ', 'standard electron beam name'],
     ['ebm_nms', 's', 'Day1', 'standard electron beam name suffix: e.g. can be Day1, Final'],
     ['ebm_i', 'f', 0.5, 'electron beam current [A]'],
@@ -282,24 +224,24 @@ varParam = [
     ['ebm_emx', 'f', -1, 'electron beam horizontal emittance [m]'],
     ['ebm_emy', 'f', -1, 'electron beam vertical emittance [m]'],
 
-    #---Undulator
-    #['und_per', 'f', 0.021, 'undulator period [m]'],
-    #['und_len', 'f', 1.5, 'undulator length [m]'],
-    ['und_b', 'f', 0.88770981, 'undulator vertical peak magnetic field [T]'],
-    #['und_bx', 'f', 0., 'undulator horizontal peak magnetic field [T]'],
-    #['und_by', 'f', 1., 'undulator vertical peak magnetic field [T]'],
-    #['und_phx', 'f', 1.5708, 'undulator horizontal magnetic field phase [rad]'],
-    #['und_phy', 'f', 0., 'undulator vertical magnetic field phase [rad]'],
-    #['und_sx', 'i', 1, 'undulator horizontal magnetic field symmetry vs longitudinal position'],
-    #['und_sy', 'i', -1, 'undulator vertical magnetic field symmetry vs longitudinal position'],
-    #['und_zc', 'f', 0., 'undulator center longitudinal position [m]'],
+    # Undulator
+    ['und_per', 'f', 0.023, 'undulator period [m]'],
+    ['und_len', 'f', 2.7945, 'undulator length [m]'],
+    ['und_b', 'f', 0.955, 'undulator vertical peak magnetic field [T]'],
+    # ['und_bx', 'f', 0., 'undulator horizontal peak magnetic field [T]'],
+    # ['und_by', 'f', 1., 'undulator vertical peak magnetic field [T]'],
+    # ['und_phx', 'f', 1.5708, 'undulator horizontal magnetic field phase [rad]'],
+    ['und_phy', 'f', 0., 'undulator vertical magnetic field phase [rad]'],
+    # ['und_sx', 'i', 1, 'undulator horizontal magnetic field symmetry vs longitudinal position'],
+    ['und_sy', 'i', -1, 'undulator vertical magnetic field symmetry vs longitudinal position'],
+    ['und_zc', 'f', 0.6, 'undulator center longitudinal position [m]'],
 
     ['und_mdir', 's', 'magn_meas', 'name of magnetic measurements sub-folder'],
     ['und_mfs', 's', 'ivu21_srx_sum.txt', 'name of magnetic measurements for different gaps summary file'],
-    #['und_g', 'f', 0., 'undulator gap [mm] (assumes availability of magnetic measurement or simulation data)'],
+    # ['und_g', 'f', 0., 'undulator gap [mm] (assumes availability of magnetic measurement or simulation data)'],
 
-    #---Calculation Types
-    #Electron Trajectory
+    # Calculation Types
+    # Electron Trajectory
     ['tr', '', '', 'calculate electron trajectory', 'store_true'],
     ['tr_cti', 'f', 0., 'initial time moment (c*t) for electron trajectory calculation [m]'],
     ['tr_ctf', 'f', 0., 'final time moment (c*t) for electron trajectory calculation [m]'],
@@ -308,10 +250,10 @@ varParam = [
     ['tr_fn', 's', 'res_trj.dat', 'file name for saving calculated trajectory data'],
     ['tr_pl', 's', 'xxpyypz', 'plot the resulting trajectiry in graph(s): ""- dont plot, otherwise the string should list the trajectory components to plot'],
 
-    #Single-Electron Spectrum vs Photon Energy
+    # Single-Electron Spectrum vs Photon Energy
     ['ss', '', '', 'calculate single-e spectrum vs photon energy', 'store_true'],
-    ['ss_ei', 'f', 100., 'initial photon energy [eV] for single-e spectrum vs photon energy calculation'],
-    ['ss_ef', 'f', 20000., 'final photon energy [eV] for single-e spectrum vs photon energy calculation'],
+    ['ss_ei', 'f', 20358., 'initial photon energy [eV] for single-e spectrum vs photon energy calculation'],
+    ['ss_ef', 'f', 20358., 'final photon energy [eV] for single-e spectrum vs photon energy calculation'],
     ['ss_ne', 'i', 10000, 'number of points vs photon energy for single-e spectrum vs photon energy calculation'],
     ['ss_x', 'f', 0., 'horizontal position [m] for single-e spectrum vs photon energy calculation'],
     ['ss_y', 'f', 0., 'vertical position [m] for single-e spectrum vs photon energy calculation'],
@@ -367,7 +309,7 @@ varParam = [
     #Multi-Electron (partially-coherent) Wavefront Propagation
     ['wm', '', '', 'calculate multi-electron (/ partially coherent) wavefront propagation', 'store_true'],
 
-    ['w_e', 'f', 9000., 'photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
+    ['w_e', 'f', 20400., 'photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ef', 'f', -1., 'final photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ne', 'i', 1, 'number of points vs photon energy for calculation of intensity distribution'],
     ['w_x', 'f', 0., 'central horizontal position [m] for calculation of intensity distribution'],
@@ -404,8 +346,8 @@ varParam = [
     #['wm_fn', 's', '', 'file name for saving multi-e (/ partially coherent) wavefront data'],
     #to add options
 
-    ['op_r', 'f', 33.1798, 'longitudinal position of the first optical element [m]'],
-    ['op_fin', 's', 'S3_SMP', 'name of the final optical element wavefront has to be propagated through'],
+    ['op_r', 'f', 29.5, 'longitudinal position of the first optical element [m]'],
+    ['op_fin', 's', 'CRL', 'name of the final optical element wavefront has to be propagated through'],
 
     #NOTE: the above option/variable names (fdir, ebm*, und*, ss*, sm*, pw*, is*, ws*, wm*) should be the same in all beamline scripts
     #on the other hand, the beamline optics related options below (op*) are specific to a particular beamline (and can be differ from beamline to beamline).
@@ -414,17 +356,28 @@ varParam = [
     #---Beamline Optics
     ['op_BL', 'f', 1, 'beamline version/option number'],
 
+    # MOAT: first mirror of Monocromator error shape
+    ['op_MOAT_ifn', 's', 'Si_heat204.dat', 'MOAT: input file name of height profile data'],
+    ['op_MOAT_ofn', 's', 'res_er_mono.dat', 'MOAT: output file name of optical path difference data'],
+
+
+
     ['op_S0_dx', 'f', 2.375e-03, 'slit S0: horizontal size [m]'],
     ['op_S0_dy', 'f', 2.0e-03, 'slit S0: vertical size [m]'],
 
     ['op_HFM_f', 'f', 11.0893, 'mirror HFM: focal length [m] (effective if op_HFM_f != 0)'],
     ['op_HFM_r', 'f', 8.924e+03, 'mirror HFM: radius of curvature [m] (effective if op_HFM_r != 0 and op_HFM_f == 0)'],
-    ['op_HFM_ang', 'f', 2.5e-03, 'mirror HFM: angle of incidence [rad]'],
+    ['op_HFM_ang', 'f', 3.1415927e-03, 'mirror HFM: angle of incidence [rad]'],
     ['op_HFM_mat', 's', '', 'mirror HFM: coating material; possible options: Si, Cr, Rh, Pt'],
-    ['op_HFM_ifn', 's', 'mir_metro/SRX_HFM_height_prof.dat', 'mirror HFM: input file name of height profile data'],
+    ['op_HFM_ifn', 's', 'HFM_SESO.dat', 'mirror HFM: input file name of height profile data'],
+    ['op_VFM_ifn', 's', 'VFM_SESO.dat', 'mirror VFM: input file name of height profile data'],
+    ['op_VM_ifn',  's', 'VM03rms.dat', 'mirror VM: input file name of height profile data'],
+
     #['op_HFM_ifn', 's', '', 'mirror HFM: input file name of height profile data'],
     ['op_HFM_amp', 'f', 1., 'mirror HFM: amplification coefficient for height profile data'],
-    ['op_HFM_ofn', 's', 'res_SRX_HFM_opt_path_dif.dat', 'mirror HCM: output file name of optical path difference data'],
+    ['op_HFM_ofn', 's', 'res_er_HFM.dat', 'mirror HFM: output file name of optical path difference data'],
+    ['op_VFM_ofn', 's', 'res_er_VFM.dat', 'mirror VFM: output file name of optical path difference data'],
+    ['op_VM_ofn', 's', 'res_er_VM.dat', 'mirror VFM: output file name of optical path difference data'],
 
     ['op_S1_dz', 'f', 0., 'S1: offset of longitudinal position [m]'],
     ['op_S1_dx', 'f', 2.375e-03, 'slit S1: horizontal size [m]'],
@@ -454,6 +407,15 @@ varParam = [
     #['op_S0_pp', 'f',      [0, 0, 1, 0, 0, 4.5, 5.0, 1.5, 2.5, 0, 0, 0], 'slit S0: propagation parameters'],
     #['op_S0_pp', 'f',      [0, 0, 1, 0, 0, 2.2, 6.0, 3.0, 15.0, 0, 0, 0], 'slit S0: propagation parameters'],
     #['op_S0_pp', 'f',      [0, 0, 1, 0, 0, 2.0, 15.0,1.5, 15.0,0, 0, 0], 'slit S0: propagation parameters'],
+    ['op_MOAT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'MOAT: propagation parameters'],
+    ['op_APE_MOA_pp', 'f',  [0, 0, 1.0, 2, 0, 8.0, 3.0, 2.0, 3.0, 0, 0, 0], 'drift S0   -> MOAT: propagation parameters'],
+    ['op_MOA_HFM_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift MOAT -> HFM:  propagation parameters'],
+    ['op_HFM_VFM_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift HFM  -> VFM:  propagation parameters'],
+    ['op_VFML_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFML -> '],
+
+    ['op_VFMT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VMT  -> SSA:  propagation parameters'],
+    ['op_VFM_VM_pp', 'f',   [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFM  -> VM:  propagation parameters'],
+
     ['op_S0_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S0: propagation parameters'],
     ['op_S0_HFM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S0 -> HFM: propagation parameters'],
     ['op_HFMA_pp', 'f',     [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Aperture propagation parameters'],
