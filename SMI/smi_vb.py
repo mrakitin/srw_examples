@@ -97,13 +97,22 @@ def set_optics(_v):
         elif arElNames[i] == 'D_VFM_VM':
             el.append(SRWLOptD(zVM - zVFM))
             pp.append(_v.op_VFM_VM_pp)
+        elif arElNames[i] == 'D_VM_SSA':
+            el.append(SRWLOptD(zSSA - zVM))
+            pp.append(_v.op_VM_SSA_pp)
+        elif arElNames[i] == 'D_SSA_CRL':
+            el.append(SRWLOptD(zCRL - zSSA))
+            pp.append(_v.op_SSA_CRL_pp)
+        elif arElNames[i] == 'D_CRL_ES2':
+            el.append(SRWLOptD(zES2 - zCRL))
+            pp.append(_v.op_CRL_ES2_pp)
 
 
         elif arElNames[i] == 'MOAT':
             ifnMOAT = os.path.join(_v.fdir, _v.op_MOAT_ifn) if len(_v.op_MOAT_ifn) > 0 else ''
             if len(ifnMOAT) > 0 and os.path.isfile(ifnMOAT):
                 hProfDataMOAT = srwl_uti_read_data_cols(ifnMOAT, '\t')
-                opMOAT = srwl_opt_setup_surf_height_2d(hProfDataMOAT, 'y', _ang=0.09727, _nx=100, _ny=500, _size_x=2.0e-02,
+                opMOAT = srwl_opt_setup_surf_height_1d(hProfDataMOAT, 'y', _ang=0.09727, _nx=100, _ny=500, _size_x=2.0e-02,
                                                        _size_y=16e-3 * sin(0.09727))
                 ofnMOAT = os.path.join(_v.fdir, _v.op_MOAT_ofn) if len(_v.op_MOAT_ofn) > 0 else ''
                 if len(ofnMOAT) > 0:
@@ -122,7 +131,7 @@ def set_optics(_v):
             ifnHFM = os.path.join(_v.fdir, _v.op_HFM_ifn) if len(_v.op_HFM_ifn) > 0 else ''
             if len(ifnHFM) > 0:
                 hProfDataHFM = srwl_uti_read_data_cols(ifnHFM, '\t')
-                opHFM = srwl_opt_setup_surf_height_2d(hProfDataHFM, 'x', _ang=_v.op_HFM_ang, _amp_coef=_v.op_HFM_amp,
+                opHFM = srwl_opt_setup_surf_height_1d(hProfDataHFM, 'x', _ang=_v.op_HFM_ang, _amp_coef=_v.op_HFM_amp,
                                                       _nx=803, _ny=200, _size_x=0.5 * sin(3.1415927e-03), _size_y=6.0e-03)
                 ofnHFM = os.path.join(_v.fdir, _v.op_HFM_ofn) if len(_v.op_HFM_ofn) > 0 else ''
                 if len(ofnHFM) > 0:
@@ -142,7 +151,7 @@ def set_optics(_v):
             ifnVFM = os.path.join(_v.fdir, _v.op_VFM_ifn) if len(_v.op_VFM_ifn) > 0 else ''
             if len(ifnVFM) > 0:
                 hProfDataVFM = srwl_uti_read_data_cols(ifnVFM, '\t')
-                opVFM = srwl_opt_setup_surf_height_2d(hProfDataVFM, 'y', _ang=3.1415927e-03, _nx=200, _ny=288,
+                opVFM = srwl_opt_setup_surf_height_1d(hProfDataVFM, 'y', _ang=3.1415927e-03, _nx=200, _ny=288,
                                                        _size_x=6.0e-03, _size_y=0.4 * sin(3.1415927e-03))
                 ofnVFM = os.path.join(_v.fdir, _v.op_VFM_ofn) if len(_v.op_VFM_ofn) > 0 else ''
                 if len(ofnVFM) > 0:
@@ -158,7 +167,7 @@ def set_optics(_v):
             if len(ifnVM) > 0:
                 hProfDataVM = srwl_uti_read_data_cols(ifnVM, '\t')
                 # sinusoidal equal to HFM. the original spec is 0.1, 6.75e-09 both 'h' 'v', angle 6.1086524e-03 rad to correct for vertical.
-                opVM = srwl_opt_setup_surf_height_2d(hProfDataVM, 'y', _ang=3.1415927e-03, _nx=200, _ny=500,
+                opVM = srwl_opt_setup_surf_height_1d(hProfDataVM, 'y', _ang=3.1415927e-03, _nx=200, _ny=500,
                                                        _size_x=6.0e-03, _size_y=0.5 * sin(3.1415927e-03))
                 ofnVM = os.path.join(_v.fdir, _v.op_VM_ofn) if len(_v.op_VM_ofn) > 0 else ''
                 if len(ofnVM) > 0:
@@ -180,6 +189,7 @@ def set_optics(_v):
             pp.append(_v.op_ApCRL_pp)
 
         elif arElNames[i] == 'CRL':
+            '''
             from Delta import Delta, DEFAULTS_FILE
             delta_obj = Delta(
                 energy=_v.w_e,
@@ -188,6 +198,8 @@ def set_optics(_v):
                 quiet=True
             )
             delta = delta_obj.delta  # 8.21692879E-07  # Be @ 20.4KeV
+            '''
+            delta = 8.21692879E-07
             attenLen = 28544.7e-06  # [m] #20.4KeV
             diamCRL = 1.e-03  # CRL diameter
             rMinCRL = 50e-06  # CRL radius at the tip of parabola [m]
@@ -227,12 +239,12 @@ varParam = [
     # Undulator
     ['und_per', 'f', 0.023, 'undulator period [m]'],
     ['und_len', 'f', 2.7945, 'undulator length [m]'],
-    ['und_b', 'f', 0.955, 'undulator vertical peak magnetic field [T]'],
+    ['und_by', 'f', 0.955, 'undulator vertical peak magnetic field [T]'],
     # ['und_bx', 'f', 0., 'undulator horizontal peak magnetic field [T]'],
     # ['und_by', 'f', 1., 'undulator vertical peak magnetic field [T]'],
     # ['und_phx', 'f', 1.5708, 'undulator horizontal magnetic field phase [rad]'],
     ['und_phy', 'f', 0., 'undulator vertical magnetic field phase [rad]'],
-    # ['und_sx', 'i', 1, 'undulator horizontal magnetic field symmetry vs longitudinal position'],
+    ['und_sx', 'i', 1, 'undulator horizontal magnetic field symmetry vs longitudinal position'],
     ['und_sy', 'i', -1, 'undulator vertical magnetic field symmetry vs longitudinal position'],
     ['und_zc', 'f', 0.6, 'undulator center longitudinal position [m]'],
 
@@ -258,7 +270,7 @@ varParam = [
     ['ss_x', 'f', 0., 'horizontal position [m] for single-e spectrum vs photon energy calculation'],
     ['ss_y', 'f', 0., 'vertical position [m] for single-e spectrum vs photon energy calculation'],
     ['ss_meth', 'i', 1, 'method to use for single-e spectrum vs photon energy calculation: 0- "manual", 1- "auto-undulator", 2- "auto-wiggler"'],
-    ['ss_prec', 'f', 0.01, 'relative precision for single-e spectrum vs photon energy calculation (nominal value is 0.01)'],
+    ['ss_prec', 'f', 0.008, 'relative precision for single-e spectrum vs photon energy calculation (nominal value is 0.01)'],
     ['ss_pol', 'i', 6, 'polarization component to extract after spectrum vs photon energy calculation: 0- Linear Horizontal, 1- Linear Vertical, 2- Linear 45 degrees, 3- Linear 135 degrees, 4- Circular Right, 5- Circular Left, 6- Total'],
     ['ss_mag', 'i', 1, 'magnetic field to be used for single-e spectrum vs photon energy calculation: 1- approximate, 2- accurate'],
     ['ss_fn', 's', 'res_spec_se.dat', 'file name for saving calculated single-e spectrum vs photon energy'],
@@ -318,9 +330,9 @@ varParam = [
     ['w_y', 'f', 0., 'central vertical position [m] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ry', 'f', 2.0e-03, 'range of vertical position [m] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ny', 'i', 100, 'number of points vs vertical position for calculation of intensity distribution'],
-    ['w_smpf', 'f', 1., 'sampling factor for calculation of intensity distribution vs horizontal and vertical position'],
+    ['w_smpf', 'f', 0., 'sampling factor for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_meth', 'i', 1, 'method to use for calculation of intensity distribution vs horizontal and vertical position'],
-    ['w_prec', 'f', 0.01, 'relative precision for calculation of intensity distribution vs horizontal and vertical position'],
+    ['w_prec', 'f', 0.008, 'relative precision for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_mag', 'i', 1, 'magnetic field to be used for calculation of intensity distribution vs horizontal and vertical position: 1- approximate, 2- accurate'],
     ['si_pol', 'i', 6, 'polarization component to extract after calculation of intensity distribution: 0- Linear Horizontal, 1- Linear Vertical, 2- Linear 45 degrees, 3- Linear 135 degrees, 4- Circular Right, 5- Circular Left, 6- Total'],
     ['si_type', 'i', 0, 'type of a characteristic to be extracted after calculation of intensity distribution: 0- Single-Electron Intensity, 1- Multi-Electron Intensity, 2- Single-Electron Flux, 3- Multi-Electron Flux, 4- Single-Electron Radiation Phase, 5- Re(E): Real part of Single-Electron Electric Field, 6- Im(E): Imaginary part of Single-Electron Electric Field, 7- Single-Electron Intensity, integrated over Time or Photon Energy'],
@@ -347,7 +359,7 @@ varParam = [
     #to add options
 
     ['op_r', 'f', 29.5, 'longitudinal position of the first optical element [m]'],
-    ['op_fin', 's', 'CRL', 'name of the final optical element wavefront has to be propagated through'],
+    ['op_fin', 's', 'D_CRL_ES2', 'name of the final optical element wavefront has to be propagated through'],
 
     #NOTE: the above option/variable names (fdir, ebm*, und*, ss*, sm*, pw*, is*, ws*, wm*) should be the same in all beamline scripts
     #on the other hand, the beamline optics related options below (op*) are specific to a particular beamline (and can be differ from beamline to beamline).
@@ -358,9 +370,9 @@ varParam = [
 
     # MOAT: first mirror of Monocromator error shape
     ['op_MOAT_ifn', 's', 'Si_heat204.dat', 'MOAT: input file name of height profile data'],
-    ['op_MOAT_ofn', 's', 'res_er_mono.dat', 'MOAT: output file name of optical path difference data'],
+    ['op_MOAT_ofn', 's', 'res_er_mono_NEW.dat', 'MOAT: output file name of optical path difference data'],
 
-
+    ['op_ApCRL_r', 'f', 1.0e-3, 'radius of the CRL aperture'],
 
     ['op_S0_dx', 'f', 2.375e-03, 'slit S0: horizontal size [m]'],
     ['op_S0_dy', 'f', 2.0e-03, 'slit S0: vertical size [m]'],
@@ -375,9 +387,9 @@ varParam = [
 
     #['op_HFM_ifn', 's', '', 'mirror HFM: input file name of height profile data'],
     ['op_HFM_amp', 'f', 1., 'mirror HFM: amplification coefficient for height profile data'],
-    ['op_HFM_ofn', 's', 'res_er_HFM.dat', 'mirror HFM: output file name of optical path difference data'],
-    ['op_VFM_ofn', 's', 'res_er_VFM.dat', 'mirror VFM: output file name of optical path difference data'],
-    ['op_VM_ofn', 's', 'res_er_VM.dat', 'mirror VFM: output file name of optical path difference data'],
+    ['op_HFM_ofn', 's', 'res_er_HFM_NEW.dat', 'mirror HFM: output file name of optical path difference data'],
+    ['op_VFM_ofn', 's', 'res_er_VFM_NEW.dat', 'mirror VFM: output file name of optical path difference data'],
+    ['op_VM_ofn', 's', 'res_er_VM_NEW.dat', 'mirror VFM: output file name of optical path difference data'],
 
     ['op_S1_dz', 'f', 0., 'S1: offset of longitudinal position [m]'],
     ['op_S1_dx', 'f', 2.375e-03, 'slit S1: horizontal size [m]'],
@@ -389,8 +401,8 @@ varParam = [
     ['op_DCM_ac2', 'f', 0., 'DCM: angular deviation of 2nd crystal from exact Bragg angle [rad]'],
 
     ['op_SSA_dz', 'f', 0., 'slit SSA: offset of longitudinal position [m]'],
-    ['op_SSA_dx', 'f', 3.0e-03, 'slit SSA: horizontal size [m]'],
-    ['op_SSA_dy', 'f', 3.0e-03, 'slit SSA: vertical size [m]'],
+    ['op_SSA_dx', 'f', 0.9e-03, 'slit SSA: horizontal size [m]'],
+    ['op_SSA_dy', 'f', 0.9e-03, 'slit SSA: vertical size [m]'],
 
     ['op_DBPM2_dz', 'f', 0., 'slit DBPM2: offset of longitudinal position [m]'],
 
@@ -413,8 +425,14 @@ varParam = [
     ['op_HFM_VFM_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift HFM  -> VFM:  propagation parameters'],
     ['op_VFML_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFML -> '],
 
-    ['op_VFMT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VMT  -> SSA:  propagation parameters'],
-    ['op_VFM_VM_pp', 'f',   [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFM  -> VM:  propagation parameters'],
+    ['op_VFMT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFMT -> SSA:  propagation parameters'],
+    ['op_VFM_VM_pp', 'f',   [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFM  -> VM:   propagation parameters'],
+    ['op_VMT_pp',    'f',   [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VMT  -> SSA:  propagation parameters'],
+    ['op_VM_SSA_pp', 'f',   [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_SSA_CRL_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_ApCRL_pp', 'f',    [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_CRL_pp', 'f',      [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_CRL_ES2_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
 
     ['op_S0_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S0: propagation parameters'],
     ['op_S0_HFM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S0 -> HFM: propagation parameters'],
@@ -467,16 +485,17 @@ if __name__ == "__main__":
     #---Parse options, defining Beamline elements and running calculations
     v = srwl_uti_parse_options(varParam)
 
+    '''
     #---Add some constant "parameters" (not allowed to be varied) for the beamline
     v.und_per = 0.021 #['und_per', 'f', 0.021, 'undulator period [m]'],
     v.und_len = 1.5 #['und_len', 'f', 1.5, 'undulator length [m]'],
     v.und_zc = 1.305 #['und_zc', 'f', 1.305, 'undulator center longitudinal position [m]'],
     v.und_sy = -1 #['und_sy', 'i', -1, 'undulator horizontal magnetic field symmetry vs longitudinal position'],
     v.und_sx = 1 #['und_sx', 'i', 1, 'undulator vertical magnetic field symmetry vs longitudinal position'],
-
+    '''
     #---Setup optics only if Wavefront Propagation is required:
     v.ws = True
     op = set_optics(v) if(v.ws or v.wm) else None
 
     #---Run all requested calculations
-    SRWLBeamline('SRX beamline').calc_all(v, op)
+    SRWLBeamline('SMI beamline').calc_all(v, op)
