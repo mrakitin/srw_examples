@@ -90,7 +90,7 @@ def drift_ebeam(ebeam, dist):
 
 
 beamline = 'ES2'  # 'ES1' 'ES2'
-BMmode = 'Norm'  # 'Norm'  'LowDiv'
+BMmode = 'LowDiv'  # 'Norm'  'LowDiv'
 bump = True  # False, True
 
 strBump = '_bump' if bump else ''
@@ -169,7 +169,7 @@ sampFactNxNyForProp = 0.0  # 1.0 #0.2 #0.1 #sampling factor for adjusting nx, ny
 arPrecParSpec = [meth, relPrec, zStartInteg, zEndInteg, npTraj, useTermin, sampFactNxNyForProp]
 
 # ***********UR Wavefront Parameters (mesh)
-sys.stdout.write('   Setup Stokes mesh ... ');
+sys.stdout.write('   Setup Stokes mesh ... ')
 sys.stdout.flush()
 wfr = SRWLWfr()  # for spectral flux vs photon energy
 wfr.allocate(1, 81, 81)  # numbers of points vs photon energy, horizontal and vertical positions
@@ -450,12 +450,12 @@ sys.stdout.write('done\n')
 
 # sys.exit(0)
 
-sys.stdout.write('   Performing Single Electron Radiation Propagation ... ');
+sys.stdout.write('   Performing Single Electron Radiation Propagation ... ')
 sys.stdout.flush()
 srwl.PropagElecField(wfr, BML)
 sys.stdout.write('done\n')
 
-sys.stdout.write('   Saving Single Electron Propagated Intensity ... ');
+sys.stdout.write('   Saving Single Electron Propagated Intensity ... ')
 sys.stdout.flush()
 arI = array('f', [0] * wfr.mesh.nx * wfr.mesh.ny)  # "flat" array to take 2D intensity data
 srwl.CalcIntFromElecField(arI, wfr, 6, 0, 3, wfr.mesh.eStart, 0, 0)
@@ -463,7 +463,7 @@ srwl_uti_save_intens_ascii(arI, wfr.mesh, strIntPropSE_OutFileName)
 sys.stdout.write('done\n')
 
 print('Switching from Coordinate to Angular Representation ... ', end='')
-srwl.SetRepresElecField(wfr, 'a');
+srwl.SetRepresElecField(wfr, 'a')
 print('done')
 
 print('Extracting Intensity from the Propagated Electric Field in Angular Representation  ... ', end='')
@@ -486,7 +486,7 @@ print('done')
 
 sys.exit(0)
 
-sys.stdout.write('   Starting simulation of Partially-Coherent Wavefront Propagation (takes a lot of time)... ');
+sys.stdout.write('   Starting simulation of Partially-Coherent Wavefront Propagation (takes a lot of time)... ')
 sys.stdout.flush()
 nMacroElec = 2000000  # Total number of Macro-Electrons (Wavefronts)
 nMacroElecAvgOneProc = 5  # Number of Macro-Electrons (Wavefronts) to average on each node (for MPI calculations)

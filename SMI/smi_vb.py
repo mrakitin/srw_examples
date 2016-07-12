@@ -53,8 +53,33 @@ def set_optics(_v):
     zES2 = zStart + 2.44 + 2.94244 + 3.42 + 0.7 + 8.0 + 10.33492 + 1.66508
 
     # Instantiation of the Optical Elements:
-    arElNamesAll_01 = ['D_APE_MOA', 'MOAT', 'D_MOA_HFM', 'HFML', 'HFMT', 'D_HFM_VFM', 'VFML', 'VFMT',
-                       'D_VFM_VM', 'VMT', 'D_VM_SSA', 'SSA', 'D_SSA_CRL', 'ApCRL', 'CRL', 'D_CRL_ES2']
+    msg = 'The combination of beamline={} / bump={} / BMmode={}'
+    print(msg.format(_v.beamline, _v.bump, _v.BMmode))
+    msg += ' is not supported.'
+    if _v.beamline == 'ES1':
+        if not _v.bump:
+            arElNamesAll_01 = ['D_APE_HFM', 'HFML', 'D_HFM_VFM', 'VFML', 'D_VFM_SSA', 'SSA', 'D_SSA_ES1']
+        else:
+            if _v.BMmode == 'Norm':
+                arElNamesAll_01 = ['D_APE_MOA', 'MOAT', 'D_MOA_HFM', 'HFML', 'HFMT', 'D_HFM_VFM', 'VFML', 'VFMT',
+                                   'D_VFM_VM', 'VMT', 'D_VM_SSA', 'SSA', 'D_SSA_ES1']
+            else:
+                raise Exception(msg.format(_v.beamline, _v.bump, _v.BMmode))
+    elif _v.beamline == 'ES2':
+        if not _v.bump:
+            raise Exception(msg.format(_v.beamline, _v.bump, _v.BMmode))
+        else:
+            if _v.BMmode == 'LowDiv':  # focus ES2 without Kb with low divergence
+                arElNamesAll_01 = ['D_APE_MOA', 'MOAT', 'D_MOA_HFM', 'HFML', 'HFMT', 'D_HFM_VFM', 'VFML', 'VFMT',
+                                   'D_VFM_VM', 'VMT', 'D_VM_SSA', 'SSA', 'D_SSA_CRL', 'ApCRL', 'CRL', 'D_CRL_ES2']
+            elif _v.BMmode == 'Norm':
+                arElNamesAll_01 = ['D_APE_MOA', 'MOAT', 'D_MOA_HFM', 'HFML', 'HFMT', 'D_HFM_VFM', 'VFML', 'VFMT',
+                                  'D_VFM_VM', 'VMT', 'D_VM_SSA', 'SSA', 'D_SSA_CRL', 'ApCRL', 'CRL', 'D_CRL_ES2']
+            else:
+                raise Exception(msg.format(_v.beamline, _v.bump, _v.BMmode))
+    else:
+        raise Exception(msg.format(_v.beamline, _v.bump, _v.BMmode))
+
     arElNamesAll_02 = []
     arElNamesAll_03 = []
     arElNamesAll_04 = []
@@ -87,7 +112,10 @@ def set_optics(_v):
         # Process all drifts here:
         if arElNames[i] == 'D_APE_MOA':
             el.append(SRWLOptD(zMOAT - zAPE))
-            pp.append(_v.op_APE_MOA_pp)
+            if _v.beamline == 'ES1':
+                pp.append(_v.op_APE_MOA_es1_pp)
+            elif _v.beamline == 'ES2':
+                pp.append(_v.op_APE_MOA_es2_pp)
         elif arElNames[i] == 'D_MOA_HFM':
             el.append(SRWLOptD(zHFM - zMOAT))
             pp.append(_v.op_MOA_HFM_pp)
@@ -106,6 +134,18 @@ def set_optics(_v):
         elif arElNames[i] == 'D_CRL_ES2':
             el.append(SRWLOptD(zES2 - zCRL))
             pp.append(_v.op_CRL_ES2_pp)
+        elif arElNames[i] == 'D_SSA_ES1':
+            el.append(SRWLOptD(zES1 - zSSA))
+            pp.append(_v.op_SSA_ES1_pp)
+        elif arElNames[i] == 'D_APE_HFM':
+            el.append(SRWLOptD(zHFM - zAPE))
+            if _v.beamline == 'ES1':
+                pp.append(_v.op_APE_MOA_es1_pp)
+            elif _v.beamline == 'ES2':
+                pp.append(_v.op_APE_MOA_es2_pp)
+        elif arElNames[i] == 'D_VFM_SSA':
+            el.append(SRWLOptD(zSSA - zVFM))
+            pp.append(_v.op_VFM_SSA_pp)
 
 
         elif arElNames[i] == 'MOAT':
@@ -124,7 +164,10 @@ def set_optics(_v):
                 pp.append(_v.op_MOAT_pp)
 
         elif arElNames[i] == 'HFML':
-            el.append(SRWLOptL(_Fx=1. / (1. / zHFM + 1. / ((zVFM - zHFM) + (zSSA - zVFM) + (zES1 - zSSA)))))  # to focus at ES1
+            if _v.BMmode == 'Norm':
+                el.append(SRWLOptL(_Fx=1. / (1. / zHFM + 1. / ((zVFM - zHFM) + (zSSA - zVFM) + (zES1 - zSSA)))))  # to focus at ES1
+            elif _v.BMmode == 'LowDiv':
+                el.append(SRWLOptL(_Fx=1. / (1. / zHFM + 1. / ((zVFM - zHFM) + (zSSA - zVFM) + (zES1 - zSSA) + 8.1 - 0.3))))  # to focus at ES2 with a low divergence
             pp.append(_v.op_HFML_pp)
 
         elif arElNames[i] == 'HFMT':
@@ -143,8 +186,12 @@ def set_optics(_v):
                 pp.append(_v.op_HFMT_pp)
 
         elif arElNames[i] == 'VFML':
-            # focus at ES1; if using Bump, VFM must be 3.9+0.3 m (to compensate bump which moves focus 0.2 m upstream)
-            el.append(SRWLOptL(_Fy=1. / (1. / (zVFM - 0.6) + 1. / ((zSSA - zVFM) + 3.9 + 0.3))))  # Norm
+            if _v.BMmode == 'Norm':
+                # Focus at ES1; if using Bump, VFM must be 3.9+0.3 m (to compensate bump which moves focus 0.2 m upstream):
+                el.append(SRWLOptL(_Fy=1. / (1. / (zVFM - 0.6) + 1. / ((zSSA - zVFM) + (zES1 - zSSA) + 0.3))))
+            elif _v.BMmode == 'LowDiv':
+                # Focus at ES2 with a low divergence:
+                el.append(SRWLOptL(_Fy=1. / (1. / (zVFM - 0.6) + 1. / ((zSSA - zVFM) + (zES1 - zSSA) - 5.7 + 8.1))))
             pp.append(_v.op_VFML_pp)
 
         elif arElNames[i] == 'VFMT':
@@ -180,7 +227,12 @@ def set_optics(_v):
 
         elif arElNames[i] == 'SSA':
             # SSA = SRWLOptA('r', 'a', 0.4e-03, 0.4e-03)  # 0.4, 0.4 for NOT low divergence mode;
-            el.append(SRWLOptA('r', 'a', _v.op_SSA_dx, _v.op_SSA_dy))
+            if _v.beamline == 'ES1' and _v.BMmode == 'Norm':
+                el.append(SRWLOptA('r', 'a', _v.op_SSA_es1_norm_dx, _v.op_SSA_es1_norm_dy))
+            elif _v.beamline == 'ES2' and _v.BMmode == 'Norm':
+                el.append(SRWLOptA('r', 'a', _v.op_SSA_es2_norm_dx, _v.op_SSA_es2_norm_dy))
+            elif _v.beamline == 'ES2' and _v.BMmode == 'LowDiv':
+                el.append(SRWLOptA('r', 'a', _v.op_SSA_es2_lowdiv_dx, _v.op_SSA_es2_lowdiv_dy))
             pp.append(_v.op_SSA_pp)
 
         elif arElNames[i] == 'ApCRL':
@@ -217,6 +269,11 @@ def set_optics(_v):
 #********************************* List of Parameters allowed to be varied
 # List of supported options / commands / parameters allowed to be varied for this Beamline (comment-out unnecessary):
 varParam = [
+    # Beamline version:
+    ['beamline', 's', 'ES2', 'beamline codename (can be "ES1"/"ES2")'],
+    ['BMmode', 's', 'Norm', 'beamline BM mode (can be "Norm"/"LowDiv")'],
+    ['bump', '', '', 'use bump or not', 'store_true'],
+
     # Data Folder
     ['fdir', 's', os.path.join(os.getcwd(), 'smi204crlb'), 'folder (directory) name for reading-in input and saving output data files'],
 
@@ -231,7 +288,8 @@ varParam = [
     ['ebm_xp', 'f', 0., 'electron beam initial average horizontal angle [rad]'],
     ['ebm_yp', 'f', 0., 'electron beam initial average vertical angle [rad]'],
     ['ebm_z', 'f', 0., 'electron beam initial average longitudinal position [m]'],
-    ['ebm_dr', 'f', 0., 'electron beam longitudinal drift [m] to be performed before a required calculation'],
+    ['ebm_dr', 'f', -0.9, 'electron beam longitudinal drift [m] to be performed before a required calculation'],
+    # ['ebm_dr', 'f', -1.44325, 'electron beam longitudinal drift [m] to be performed before a required calculation'],
     ['ebm_ens', 'f', -1, 'electron beam relative energy spread'],
     ['ebm_emx', 'f', -1, 'electron beam horizontal emittance [m]'],
     ['ebm_emy', 'f', -1, 'electron beam vertical emittance [m]'],
@@ -239,7 +297,7 @@ varParam = [
     # Undulator
     ['und_per', 'f', 0.023, 'undulator period [m]'],
     ['und_len', 'f', 2.7945, 'undulator length [m]'],
-    ['und_by', 'f', 0.955, 'undulator vertical peak magnetic field [T]'],
+    ['und_b', 'f', 0.955, 'undulator vertical peak magnetic field [T]'],
     # ['und_bx', 'f', 0., 'undulator horizontal peak magnetic field [T]'],
     # ['und_by', 'f', 1., 'undulator vertical peak magnetic field [T]'],
     # ['und_phx', 'f', 1.5708, 'undulator horizontal magnetic field phase [rad]'],
@@ -264,8 +322,8 @@ varParam = [
 
     # Single-Electron Spectrum vs Photon Energy
     ['ss', '', '', 'calculate single-e spectrum vs photon energy', 'store_true'],
-    ['ss_ei', 'f', 20358., 'initial photon energy [eV] for single-e spectrum vs photon energy calculation'],
-    ['ss_ef', 'f', 20358., 'final photon energy [eV] for single-e spectrum vs photon energy calculation'],
+    ['ss_ei', 'f', 20000., 'initial photon energy [eV] for single-e spectrum vs photon energy calculation'],
+    ['ss_ef', 'f', 20400., 'final photon energy [eV] for single-e spectrum vs photon energy calculation'],
     ['ss_ne', 'i', 10000, 'number of points vs photon energy for single-e spectrum vs photon energy calculation'],
     ['ss_x', 'f', 0., 'horizontal position [m] for single-e spectrum vs photon energy calculation'],
     ['ss_y', 'f', 0., 'vertical position [m] for single-e spectrum vs photon energy calculation'],
@@ -289,7 +347,7 @@ varParam = [
     ['sm_ny', 'i', 1, 'number of points vs vertical position for multi-e spectrum vs photon energy calculation'],
     ['sm_mag', 'i', 1, 'magnetic field to be used for calculation of multi-e spectrum spectrum or intensity distribution: 1- approximate, 2- accurate'],
     ['sm_hi', 'i', 1, 'initial UR spectral harmonic to be taken into accountfor multi-e spectrum vs photon energy calculation'],
-    ['sm_hf', 'i', 15, 'final UR spectral harmonic to be taken into accountfor multi-e spectrum vs photon energy calculation'],
+    ['sm_hf', 'i', 21, 'final UR spectral harmonic to be taken into accountfor multi-e spectrum vs photon energy calculation'],
     ['sm_prl', 'f', 1., 'longitudinal integration precision parameter for multi-e spectrum vs photon energy calculation'],
     ['sm_pra', 'f', 1., 'azimuthal integration precision parameter for multi-e spectrum vs photon energy calculation'],
     ['sm_type', 'i', 1, 'calculate flux (=1) or flux per unit surface (=2)'],
@@ -321,7 +379,7 @@ varParam = [
     #Multi-Electron (partially-coherent) Wavefront Propagation
     ['wm', '', '', 'calculate multi-electron (/ partially coherent) wavefront propagation', 'store_true'],
 
-    ['w_e', 'f', 20400., 'photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
+    ['w_e', 'f', 20358., 'photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ef', 'f', -1., 'final photon energy [eV] for calculation of intensity distribution vs horizontal and vertical position'],
     ['w_ne', 'i', 1, 'number of points vs photon energy for calculation of intensity distribution'],
     ['w_x', 'f', 0., 'central horizontal position [m] for calculation of intensity distribution'],
@@ -359,7 +417,7 @@ varParam = [
     #to add options
 
     ['op_r', 'f', 29.5, 'longitudinal position of the first optical element [m]'],
-    ['op_fin', 's', 'D_CRL_ES2', 'name of the final optical element wavefront has to be propagated through'],
+    ['op_fin', 's', '', 'name of the final optical element wavefront has to be propagated through'],
 
     #NOTE: the above option/variable names (fdir, ebm*, und*, ss*, sm*, pw*, is*, ws*, wm*) should be the same in all beamline scripts
     #on the other hand, the beamline optics related options below (op*) are specific to a particular beamline (and can be differ from beamline to beamline).
@@ -395,14 +453,18 @@ varParam = [
     ['op_S1_dx', 'f', 2.375e-03, 'slit S1: horizontal size [m]'],
     ['op_S1_dy', 'f', 10.0e-03, 'slit S1: vertical size [m]'],
 
-    ['op_DCM_e0', 'f', 8999., 'DCM: central photon energy DCM is tuned to [eV]'],  #MR15032016: replaced "op_DCM_e" by "op_DCM_e0" to test the import in Sirepo
+    ['op_DCM_e0', 'f', 20358., 'DCM: central photon energy DCM is tuned to [eV]'],  #MR15032016: replaced "op_DCM_e" by "op_DCM_e0" to test the import in Sirepo
     ['op_DCM_r', 's', '111', 'DCM: reflection type (can be either "111" or "311")'],
     ['op_DCM_ac1', 'f', 0., 'DCM: angular deviation of 1st crystal from exact Bragg angle [rad]'],
     ['op_DCM_ac2', 'f', 0., 'DCM: angular deviation of 2nd crystal from exact Bragg angle [rad]'],
 
     ['op_SSA_dz', 'f', 0., 'slit SSA: offset of longitudinal position [m]'],
-    ['op_SSA_dx', 'f', 0.9e-03, 'slit SSA: horizontal size [m]'],
-    ['op_SSA_dy', 'f', 0.9e-03, 'slit SSA: vertical size [m]'],
+    ['op_SSA_es1_norm_dx', 'f', 0.4e-03, 'slit SSA: horizontal size [m]'],
+    ['op_SSA_es1_norm_dy', 'f', 0.4e-03, 'slit SSA: vertical size [m]'],
+    ['op_SSA_es2_norm_dx', 'f', 0.9e-03, 'slit SSA: horizontal size [m]'],
+    ['op_SSA_es2_norm_dy', 'f', 0.9e-03, 'slit SSA: vertical size [m]'],
+    ['op_SSA_es2_lowdiv_dx', 'f', 0.9e-03, 'slit SSA: horizontal size [m]'],
+    ['op_SSA_es2_lowdiv_dy', 'f', 0.9e-03, 'slit SSA: vertical size [m]'],
 
     ['op_DBPM2_dz', 'f', 0., 'slit DBPM2: offset of longitudinal position [m]'],
 
@@ -420,7 +482,8 @@ varParam = [
     #['op_S0_pp', 'f',      [0, 0, 1, 0, 0, 2.2, 6.0, 3.0, 15.0, 0, 0, 0], 'slit S0: propagation parameters'],
     #['op_S0_pp', 'f',      [0, 0, 1, 0, 0, 2.0, 15.0,1.5, 15.0,0, 0, 0], 'slit S0: propagation parameters'],
     ['op_MOAT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'MOAT: propagation parameters'],
-    ['op_APE_MOA_pp', 'f',  [0, 0, 1.0, 2, 0, 8.0, 3.0, 2.0, 3.0, 0, 0, 0], 'drift S0   -> MOAT: propagation parameters'],
+    ['op_APE_MOA_es1_pp', 'f', [0, 0, 1.0, 2, 0, 8.0, 3.0, 2.0, 3.0, 0, 0, 0], 'drift S0   -> MOAT: propagation parameters'],
+    ['op_APE_MOA_es2_pp', 'f', [0, 0, 1.0, 2, 0, 8.0, 3.0, 3.0, 4.0, 0, 0, 0], 'drift S0   -> MOAT: propagation parameters'],
     ['op_MOA_HFM_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift MOAT -> HFM:  propagation parameters'],
     ['op_HFM_VFM_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift HFM  -> VFM:  propagation parameters'],
     ['op_VFML_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift VFML -> '],
@@ -433,21 +496,24 @@ varParam = [
     ['op_ApCRL_pp', 'f',    [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
     ['op_CRL_pp', 'f',      [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
     ['op_CRL_ES2_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_SSA_ES1_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
+    ['op_VFM_SSA_pp', 'f',  [0, 0, 1.0, 2, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], ''],
 
-    ['op_S0_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S0: propagation parameters'],
-    ['op_S0_HFM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S0 -> HFM: propagation parameters'],
-    ['op_HFMA_pp', 'f',     [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Aperture propagation parameters'],
-    ['op_HFML_pp', 'f',     [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Lens propagation parameters'],
-    ['op_HFMT_pp', 'f',     [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Transmission propagation parameters'],
-    ['op_HFM_S1_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift HDM -> S1: propagation parameters'],
-    ['op_S1_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S1: propagation parameters'],
-    ['op_S1_SSA_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S1 -> SSA: propagation parameters'],
-    ['op_S1_DCM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S1 -> DCM: propagation parameters'],
-    ['op_DCMC1_pp', 'f',    [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'DCM C1: propagation parameters'],
-    ['op_DCMC2_pp', 'f',    [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'DCM C2: propagation parameters'],
-    ['op_DCM_SSA_pp', 'f',  [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift DCM -> SSA: propagation parameters'],
-    ['op_SSA_pp', 'f',      [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit SSA: propagation parameters'],
-    ['op_SSA_DBPM2_pp', 'f',[0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift SSA -> DBPM2: propagation parameters'],
+    ['op_HFML_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Lens propagation parameters'],
+    ['op_HFMT_pp', 'f',     [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Transmission propagation parameters'],
+    ['op_SSA_pp', 'f',      [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit SSA: propagation parameters'],
+
+    # ['op_S0_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S0: propagation parameters'],
+    # ['op_S0_HFM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S0 -> HFM: propagation parameters'],
+    # ['op_HFMA_pp', 'f',     [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'mirror HCM: Aperture propagation parameters'],
+    # ['op_HFM_S1_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift HDM -> S1: propagation parameters'],
+    # ['op_S1_pp', 'f',       [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'slit S1: propagation parameters'],
+    # ['op_S1_SSA_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S1 -> SSA: propagation parameters'],
+    # ['op_S1_DCM_pp', 'f',   [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift S1 -> DCM: propagation parameters'],
+    # ['op_DCMC1_pp', 'f',    [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'DCM C1: propagation parameters'],
+    # ['op_DCMC2_pp', 'f',    [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'DCM C2: propagation parameters'],
+    # ['op_DCM_SSA_pp', 'f',  [0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift DCM -> SSA: propagation parameters'],
+    # ['op_SSA_DBPM2_pp', 'f',[0, 0, 1, 1, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'drift SSA -> DBPM2: propagation parameters'],
 
     ###############To continue
 
@@ -456,7 +522,7 @@ varParam = [
     ##    ['op_SMP_D_pp', 'f',   [0, 0, 1, 3, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'sample -> detector: propagation parameters'],
 
     #['op_fin_pp', 'f',     [0, 0, 1, 0, 1, 0.1, 5.0, 1.0, 1.5, 0, 0, 0], 'final post-propagation (resize) parameters'],
-    ['op_fin_pp', 'f',      [0, 0, 1, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'final post-propagation (resize) parameters'],
+    ['op_fin_pp', 'f',      [0, 0, 1.0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0], 'final post-propagation (resize) parameters'],
 
     #[ 0]: Auto-Resize (1) or not (0) Before propagation
     #[ 1]: Auto-Resize (1) or not (0) After propagation
@@ -494,6 +560,8 @@ if __name__ == "__main__":
     v.und_sx = 1 #['und_sx', 'i', 1, 'undulator vertical magnetic field symmetry vs longitudinal position'],
     '''
     #---Setup optics only if Wavefront Propagation is required:
+    v.si = True
+    v.ss = True
     v.ws = True
     op = set_optics(v) if(v.ws or v.wm) else None
 
