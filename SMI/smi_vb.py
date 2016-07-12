@@ -279,7 +279,7 @@ varParam = [
 
     # Electron Beam
     ['ebm_nm', 's', 'NSLS-II High Beta ', 'standard electron beam name'],
-    ['ebm_nms', 's', 'Day1', 'standard electron beam name suffix: e.g. can be Day1, Final'],
+    ['ebm_nms', 's', 'Day 1', 'standard electron beam name suffix: e.g. can be Day 1, Final'],
     ['ebm_i', 'f', 0.5, 'electron beam current [A]'],
     #['ebeam_e', 'f', 3., 'electron beam avarage energy [GeV]'],
     ['ebm_de', 'f', 0., 'electron beam average energy deviation [GeV]'],
