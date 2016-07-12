@@ -278,7 +278,7 @@ varParam = [
     ['fdir', 's', os.path.join(os.getcwd(), 'smi204crlb'), 'folder (directory) name for reading-in input and saving output data files'],
 
     # Electron Beam
-    ['ebm_nm', 's', 'NSLS-II Low Beta ', 'standard electron beam name'],
+    ['ebm_nm', 's', 'NSLS-II High Beta ', 'standard electron beam name'],
     ['ebm_nms', 's', 'Day1', 'standard electron beam name suffix: e.g. can be Day1, Final'],
     ['ebm_i', 'f', 0.5, 'electron beam current [A]'],
     #['ebeam_e', 'f', 3., 'electron beam avarage energy [GeV]'],
