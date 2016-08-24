@@ -16,7 +16,7 @@ def get_x_width(dat_file, y_idx='middle', plot=True, variate_steps=0, show=False
     list_2d, x, y = prepare_data(dat_file)
 
     if y_idx == 'middle':
-        y_idx = np.where(abs(y) < 1e-8)[0][0]
+        y_idx = np.where(list_2d == list_2d.max())[1][0]
     factor = 0.5
     m_to_um = 1e6
 
@@ -120,5 +120,5 @@ def _read_data(dat_file, skip_lines=11):
 if __name__ == '__main__':
     for suffix in ['es1', 'es2']:
         dat_file = 'SMI/me_fwhm/res_int_pr_me_{}.dat'.format(suffix)
-        widths = get_x_width(dat_file, y_idx='middle', variate_steps=5, show=False, suffix=suffix)
+        widths = get_x_width(dat_file, y_idx='middle', variate_steps=1, show=False, suffix=suffix)
         print('Widths for {}: {}'.format(suffix, widths))
