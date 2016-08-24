@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
-"""The module is to perform series of the SRW simulations of the SRX beamline @ NSLS-II
-with different radii of the spherical mirror to find the best radius of curvature
-producing the smallest horizontal focus.
+"""Plot FWHM for the provided intensity file.
 
-Author: Maksim Rakitin, BNL (based on O.Chubar's script).
-Date: 2016-08-15
+Author: Maksim Rakitin, BNL
+Date: 2016-08-24
 """
-import array
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-import uti_io
 
 PICS_DIR = 'pics'
 
@@ -87,18 +82,16 @@ def prepare_data(dat_file):
 
 
 def _convert_1d_to_2d(list_1d, x_range, y_range):
-    totLen = int(x_range[2] * y_range[2])
-    lenAr2d = len(list_1d)
-    if lenAr2d > totLen:
-        list_1d = np.array(list_1d[0:totLen])
-    elif lenAr2d < totLen:
-        auxAr = array.array('d', [0] * lenAr2d)
-        for i in range(lenAr2d):
-            auxAr[i] = list_1d[i]
-        list_1d = np.array(auxAr)
-
-    if isinstance(list_1d, (list, array)):
-        list_1d = np.array(list_1d)
+    tot_len = int(x_range[2] * y_range[2])
+    len_1d = len(list_1d)
+    if len_1d > tot_len:
+        list_1d = np.array(list_1d[0:tot_len])
+    elif len_1d < tot_len:
+        aux_list = np.zeros(len_1d)
+        for i in range(len_1d):
+            aux_list[i] = list_1d[i]
+        list_1d = np.array(aux_list)
+    list_1d = np.array(list_1d)
     list_2d = list_1d.reshape(x_range[2], y_range[2], order='F')
     return list_2d
 
@@ -108,14 +101,7 @@ def _parse_header(row, data_type):
 
 
 def _read_data(dat_file, skip_lines=11):
-    list_1d = uti_io.read_ascii_data_cols(
-        _file_path=dat_file,
-        _str_sep='\t',
-        _i_col_start=0,
-        _i_col_end=-1,
-        _n_line_skip=skip_lines,
-    )[0]
-
+    list_1d = np.loadtxt(dat_file)
     with open(dat_file, 'r') as f:
         content = f.readlines()[:skip_lines]
         x_range = [
