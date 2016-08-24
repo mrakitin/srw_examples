@@ -50,10 +50,10 @@ def get_x_width(dat_file, y_idx='middle', plot=True, variate_steps=0, show=False
             if not os.path.isdir(PICS_DIR):
                 os.mkdir(PICS_DIR)
             units_um = u'\u00B5m'
-            frac_of_max_text = '{} x max intensity {}'.format(factor, max_value)
+            frac_of_max_text = '{} * max intensity ({})'.format(factor, max_value)
             plt.figure(figsize=(10, 6))
             plt.title(
-                u'Width at {}: {} {}'.format(frac_of_max_text, '', round(width, 3), units_um))
+                u'Width at {}: {} {}'.format(frac_of_max_text, round(width, 3), units_um))
             plt.xlabel(u'Horizontal Position [{}]'.format(units_um))
             plt.ylabel(u'Intensity [ph/s/.1%bw/mm²]')
 
@@ -134,5 +134,5 @@ def _read_data(dat_file, skip_lines=11):
 if __name__ == '__main__':
     for suffix in ['es1', 'es2']:
         dat_file = 'SMI/me_fwhm/res_int_pr_me_{}.dat'.format(suffix)
-        widths = get_x_width(dat_file, y_idx='middle', variate_steps=10, show=False, suffix=suffix)
+        widths = get_x_width(dat_file, y_idx='middle', variate_steps=5, show=False, suffix=suffix)
         print('Widths for {}: {}'.format(suffix, widths))
