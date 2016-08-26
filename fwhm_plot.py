@@ -69,6 +69,11 @@ def get_width(dat_file, y_idx='middle', plot=True, variate_steps=0, show=False, 
             plt.xlabel(u'{} Position [{}]'.format(position, units_um))
             plt.ylabel(u'Intensity [ph/s/.1%bw/mm²]')
 
+            int_dat = os.path.join(PICS_DIR, 'intensity_{}_{}.dat'.format(suffix, axis))
+            with open(int_dat, 'w') as f:
+                for i in range(len(x_um)):
+                    f.write('{}\t{}\n'.format(x_um[i], x_at_zero_y[i]))
+
             plt.plot(x_um, x_at_zero_y, label=u'All X values at Y={} {} (index #{})'.format(y_coor, units_um, i))
             plt.plot(x_ge_frac_of_max_um, vals_ge_frac_of_max, c='red', label='Values >= {}'.format(frac_of_max_text))
             half_width = abs(x_ge_frac_of_max_um[-1] - x_ge_frac_of_max_um[0]) * 0.5
